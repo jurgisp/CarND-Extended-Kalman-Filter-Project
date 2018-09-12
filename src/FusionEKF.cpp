@@ -62,47 +62,45 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       is_initialized_ = true;
     }
 
-    return;
   }
+  else {
 
-  /*****************************************************************************
-   *  Prediction
-   ****************************************************************************/
+    /*****************************************************************************
+     *  Prediction
+     ****************************************************************************/
 
-  /**
-   TODO:
-     * Update the state transition matrix F according to the new elapsed time.
-      - Time is measured in seconds.
-     * Update the process noise covariance matrix.
-     * Use noise_ax = 9 and noise_ay = 9 for your Q matrix.
-   */
+    auto dt = (measurement_pack.timestamp_ - previous_timestamp_) / 1e6;
+    ekf_.F_ = MatrixXd(4, 4);
+    ekf_.F_ << 1, 0, dt, 0,
+               0, 1, 0, dt,
+               0, 0, 1, 0,
+               0, 0, 0, 1;
 
-  auto dt = (measurement_pack.timestamp_ - previous_timestamp_) / 1e6;
-  ekf_.F_ = MatrixXd(4, 4);
-  ekf_.F_ << 1, 0,dt, 0,
-             0, 1, 0,dt,
-             0, 0, 1, 0,
-             0, 0, 0, 1;
-  ekf_.Q_ << 0, 0, 0, 0,
-             0, 0, 0, 0,
-             0, 0,10, 0,
-             0, 0, 0,10;
-  ekf_.Predict();
-  previous_timestamp_ = measurement_pack.timestamp_;
+    double noise_ax = 9;
+    double noise_ay = 9;
+    MatrixXd G(4,2);
+    G << dt*dt/2, 0, 0, dt*dt/2, dt, 0, 0, dt;
+    MatrixXd Qv(2,2);
+    Qv << noise_ax, 0, 0, noise_ay;
+    ekf_.Q_ = G * Qv * G.transpose();
 
-  /*****************************************************************************
-   *  Update
-   ****************************************************************************/
+    ekf_.Predict();
+    previous_timestamp_ = measurement_pack.timestamp_;
 
-  if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
-    // Radar updates
-  } else {
-    // Laser updates
-    ekf_.Update(measurement_pack.raw_measurements_);
+    /*****************************************************************************
+     *  Update
+     ****************************************************************************/
+
+    if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
+      // Radar updates
+    } else {
+      // Laser updates
+      ekf_.Update(measurement_pack.raw_measurements_);
+    }
+
   }
 
   // print the output
-  cout << measurement_pack.sensor_type_ << ": " << measurement_pack.raw_measurements_.transpose() << endl;
-  cout << "x_ = " << ekf_.x_.transpose() << endl;
-  cout << "P_ = " << endl << ekf_.P_ << endl;
+  //cout << "x_ = " << ekf_.x_.transpose() << endl;
+  //cout << "P_ = " << endl << ekf_.P_ << endl;
 }
