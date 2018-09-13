@@ -24,6 +24,15 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
     return sum;
 }
 
-MatrixXd Tools::CalculateJacobian(const VectorXd& x_state) {
-    return MatrixXd::Zero(4, 4);
+MatrixXd Tools::CalculateJacobian(const VectorXd& x) {
+    double px = x(0), py = x(1), vx = x(2), vy = x(3);
+    double r2 = pow(px, 2) + pow(py, 2);
+    double r = sqrt(r2);
+    double r3 = r2*r;
+
+    MatrixXd Hj(3, 4);
+    Hj <<  px/r,   py/r, 0, 0,
+          -py/r2, px/r2, 0, 0,
+          py*(vx*py-vy*px)/r3, px*(vy*px-vx*py)/r3, px/r, py/r;
+    return Hj;
 }

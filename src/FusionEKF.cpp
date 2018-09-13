@@ -25,12 +25,6 @@ FusionEKF::FusionEKF() {
 
   H_laser_ = MatrixXd(2, 4);
   H_laser_ << 1, 0, 0, 0, 0, 1, 0, 0;
-
-  Hj_ = MatrixXd(3, 4);
-  // TODO
-
-  ekf_.H_ = H_laser_;
-  ekf_.R_ = R_laser_;
 }
 
 /**
@@ -56,8 +50,11 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       ekf_.x_ = VectorXd(4);
       ekf_.x_ << measurement_pack.raw_measurements_, 0, 0;
       ekf_.P_ = MatrixXd(4, 4);
+      // Position uncertainty is given by measurement uncertainty
       auto p = R_laser_(0,0);
-      ekf_.P_ << p, 0, 0, 0, 0, p, 0, 0, 0, 0, 10., 0, 0, 0, 0, 10.;
+      // We don't know anything about velocity - assume that's uncertainty of 10.
+      auto p_max = 10.;
+      ekf_.P_ << p, 0, 0, 0, 0, p, 0, 0, 0, 0, p_max, 0, 0, 0, 0, p_max;
       previous_timestamp_ = measurement_pack.timestamp_;
       is_initialized_ = true;
     }
@@ -93,8 +90,13 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
     if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
       // Radar updates
+      ekf_.H_ = tools.CalculateJacobian(ekf_.x_);
+      ekf_.R_ = R_radar_;
+      ekf_.UpdateEKF(measurement_pack.raw_measurements_);
     } else {
       // Laser updates
+      ekf_.H_ = H_laser_;
+      ekf_.R_ = R_laser_;
       ekf_.Update(measurement_pack.raw_measurements_);
     }
 

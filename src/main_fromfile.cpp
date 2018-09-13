@@ -30,8 +30,8 @@ int main()
     while (std::getline(infile, line))
     {
         cout << line << endl;
-        if (i++ > 100)
-            break;
+//        if (i++ > 100)
+//            break;
 
         std::istringstream iss(line);
 
@@ -104,10 +104,11 @@ int main()
 
         MatrixXd estimate_vs_gt(4, 3);
         estimate_vs_gt << estimate, gt_values, (estimate-gt_values);
-        cout << estimate_vs_gt.transpose() << endl;
+        cout << "estimate, truth, diff = " << endl << estimate_vs_gt.transpose() << endl;
     }
 
     VectorXd rmse = tools.CalculateRMSE(estimations, ground_truth);
-    cout << "RMSE=" << rmse.transpose() << endl;
+    cout << "N = " << estimations.size() << endl;
+    cout << "RMSE = " << rmse.transpose() << endl;
 
 }
