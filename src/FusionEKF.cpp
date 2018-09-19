@@ -42,21 +42,26 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
 
     if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
-      /**
-      Convert radar from polar to cartesian coordinates and initialize state.
-      */
+        double r = measurement_pack.raw_measurements_(0);
+        double phi = measurement_pack.raw_measurements_(1);
+        ekf_.x_ = VectorXd(4);
+        ekf_.x_ << r*cos(phi), r*sin(phi), 0, 0;
+        ekf_.P_ = MatrixXd(4, 4);
+        ekf_.P_ << 0.09, 0, 0, 0, 0, 0.09, 0, 0, 0, 0, 10., 0, 0, 0, 0, 10.;
+        previous_timestamp_ = measurement_pack.timestamp_;
+        is_initialized_ = true;
     }
     else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
-      ekf_.x_ = VectorXd(4);
-      ekf_.x_ << measurement_pack.raw_measurements_, 0, 0;
-      ekf_.P_ = MatrixXd(4, 4);
-      // Position uncertainty is given by measurement uncertainty
-      auto p = R_laser_(0,0);
-      // We don't know anything about velocity - assume that's uncertainty of 10.
-      auto p_max = 10.;
-      ekf_.P_ << p, 0, 0, 0, 0, p, 0, 0, 0, 0, p_max, 0, 0, 0, 0, p_max;
-      previous_timestamp_ = measurement_pack.timestamp_;
-      is_initialized_ = true;
+        ekf_.x_ = VectorXd(4);
+        ekf_.x_ << measurement_pack.raw_measurements_, 0, 0;
+        ekf_.P_ = MatrixXd(4, 4);
+        // Position uncertainty is given by measurement uncertainty
+        double p = R_laser_(0,0);
+        // We don't know anything about velocity - assume that's uncertainty of 10.
+        double p_max = 10.;
+        ekf_.P_ << p, 0, 0, 0, 0, p, 0, 0, 0, 0, p_max, 0, 0, 0, 0, p_max;
+        previous_timestamp_ = measurement_pack.timestamp_;
+        is_initialized_ = true;
     }
 
   }
